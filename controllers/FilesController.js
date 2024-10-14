@@ -100,6 +100,71 @@ class FilesController {
       localPath: localFilePath,
     });
   }
+
+  // GET /files/:id: Retrieve a file document based on the ID
+  static async getShow(req, res) {
+    const token = req.headers["x-token"];
+    if (!token) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    const tokenKey = `auth_${token}`;
+    const userId = await redisClient.get(tokenKey);
+
+    if (!userId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    try {
+      const fileId = req.params.id;
+      const file = await dbClient.db
+        .collection("files")
+        .findOne({ _id: new ObjectId(fileId), userId });
+
+      if (!file) {
+        return res.status(404).json({ error: "Not found" });
+      }
+
+      return res.status(200).json(file);
+    } catch (error) {
+      console.error("Error fetching file by ID:", error);
+      return res.status(500).json({ error: "Internal Server Error" });
+    }
+  }
+
+  // GET /files: Retrieve all user files for a specific parentId with pagination
+  static async getIndex(req, res) {
+    const token = req.headers["x-token"];
+    if (!token) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    const tokenKey = `auth_${token}`;
+    const userId = await redisClient.get(tokenKey);
+
+    if (!userId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    const parentId = req.query.parentId ? new ObjectId(req.query.parentId) : 0;
+    const page = parseInt(req.query.page, 10) || 0;
+    const pageSize = 20;
+    const skip = page * pageSize;
+
+    try {
+      const files = await dbClient.db
+        .collection("files")
+        .find({ userId, parentId })
+        .skip(skip)
+        .limit(pageSize)
+        .toArray();
+
+      return res.status(200).json(files);
+    } catch (error) {
+      console.error("Error fetching files list:", error);
+      return res.status(500).json({ error: "Internal Server Error" });
+    }
+  }
 }
 
 export default FilesController;
