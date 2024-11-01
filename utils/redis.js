@@ -1,21 +1,20 @@
 #!/usr/bin/env node
 
-import redis from "redis";
+import redis from 'redis';
 
 class RedisClient {
   constructor() {
     this.client = redis.createClient();
-    this.client.on("error", (err) => {
-      console.error("Redis client error:", err);
+    this.client.on('error', (err) => {
+      console.error('Redis client error:', err);
     });
   }
 
   isAlive() {
     if (this.client.connected) {
       return true;
-    } else {
-      return false;
     }
+    return false;
   }
 
   async get(key) {
@@ -32,7 +31,7 @@ class RedisClient {
 
   async set(key, value, duration) {
     return new Promise((resolve, reject) => {
-      this.client.set(key, value, "EX", duration, (err, reply) => {
+      this.client.set(key, value, 'EX', duration, (err, reply) => {
         if (err) {
           reject(err);
         } else {
