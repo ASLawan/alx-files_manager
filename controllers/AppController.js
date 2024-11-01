@@ -1,5 +1,5 @@
-import redisClient from "../utils/redis.js";
-import dbClient from "../utils/db.js";
+import redisClient from '../utils/redis';
+import dbClient from '../utils/db';
 
 class AppController {
   // GET /status
@@ -27,7 +27,7 @@ class AppController {
       console.error(`Error fetching stats: ${error.message}`);
       res
         .status(500)
-        .json({ error: "An error occurred while fetching stats." });
+        .json({ error: 'An error occurred while fetching stats.' });
     }
   }
 }
