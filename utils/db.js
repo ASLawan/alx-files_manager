@@ -1,65 +1,60 @@
-import mongoose from "mongoose";
+import { MongoClient } from 'mongodb';
 
 class DBClient {
+  /**
+   * Initializes a new instance of DBClient
+   */
   constructor() {
-    const host = process.env.DB_HOST || "localhost";
-    const port = process.env.DB_PORT || 27017;
-    const database = process.env.DB_DATABASE || "files_manager";
-
-    // MongoDB connection string
-    const mongoURI = `mongodb://${host}:${port}/${database}`;
-
-    // Initialize the connection
-    this.connected = false;
-    this.connect(mongoURI);
+    const HOST = process.env.DB_HOST || 'localhost';
+    const PORT = process.env.BD_PORT || 27017;
+    const DATABASE = process.env.DB_DATABASE || 'files_manager';
+    const URI = `mongodb://${HOST}:${PORT}`;
+    this.mongoClient = new MongoClient(URI, { useUnifiedTopology: true });
+    this.mongoClient.connect((error) => {
+      if (!error) this.db = this.mongoClient.db(DATABASE);
+    });
   }
 
-  async connect(mongoURI) {
-    try {
-      // Connecting to MongoDB using Mongoose
-      await mongoose.connect(mongoURI);
-      this.connected = true;
-      console.log("Connected to MongoDB successfully");
-    } catch (error) {
-      this.connected = false;
-      console.error("Error connecting to MongoDB:", error);
-    }
-  }
-
-  // Returns true if the connection is alive, false otherwise
+  /**
+   * Check mongodb client's connection status
+   * @returns {boolean} mongoClient connection status
+   */
   isAlive() {
-    return this.connected;
+    return this.mongoClient.isConnected();
   }
 
-  // Return the number of documents in the 'users' collection
+  /**
+   * Retrieves specified collection from database
+   * @returns {import("mongodb").Collection} - users collection object
+   */
+  getCollection(collectionName) {
+    const collection = this.db.collection(collectionName);
+    return collection;
+  }
+
   async nbUsers() {
-    try {
-      if (!this.isAlive()) {
-        console.error("Not connected to MongoDB");
-        return 0;
-      }
-      return await mongoose.connection.collection("users").countDocuments();
-    } catch (error) {
-      console.error("Error counting number of users:", error);
-      return 0;
-    }
+    const usersCollection = this.getCollection('users');
+    const numberOfUsers = await usersCollection.countDocuments();
+    return numberOfUsers;
   }
 
-  // Return the number of documents in the 'files' collection
+  /**
+   * Queries 'files' collection
+   * @returns {number} - number of documents in files collection
+   */
   async nbFiles() {
-    try {
-      if (!this.isAlive()) {
-        console.error("Not connected to MongoDB");
-        return 0;
-      }
-      return await mongoose.connection.collection("files").countDocuments();
-    } catch (error) {
-      console.error("Error counting number of files:", error);
-      return 0;
-    }
+    const filesCollection = this.getCollection('files');
+    const numberOfFiles = filesCollection.countDocuments();
+    return numberOfFiles;
+  }
+
+  /**
+   * Closes connection to mongodb client
+   */
+  async close() {
+    await this.mongoClient.close();
   }
 }
 
-// Exporting an instance of DBClient
 const dbClient = new DBClient();
 export default dbClient;
