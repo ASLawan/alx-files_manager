@@ -5,6 +5,10 @@ import dbClient from '../utils/db';
 import redisClient from '../utils/redis';
 
 class UsersController {
+  /**
+   *
+   * post new
+   */
   static async postNew(req, res) {
     const { email, password } = req.body;
     if (!email) {
@@ -28,6 +32,9 @@ class UsersController {
     return res.status(201).json({ id: result.insertedId, email });
   }
 
+  /**
+ * get me
+ */
   static async getMe(req, res) {
     const token = req.headers['x-token'];
 
@@ -62,6 +69,9 @@ class UsersController {
     return res.status(200).json({ id: user._id, email: user.email });
   }
 
+  /**
+ * connect
+ */
   static async connect(req, res) {
     const authorizationHeader = req.headers.authorization;
     if (!authorizationHeader) {
@@ -88,6 +98,9 @@ class UsersController {
     return res.status(200).json({ token });
   }
 
+  /**
+ * disconnect
+ */
   static async disconnect(req, res) {
     const token = req.headers['x-token'];
     if (!token) {

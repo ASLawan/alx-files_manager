@@ -4,9 +4,16 @@ import redisClient from '../utils/redis';
 import dbClient from '../utils/db';
 
 class AuthController {
+  /**
+   *
+   * @param {request} req
+   * @param {response} res
+   * @returns
+   */
   static async getConnect(req, res) {
     const authHeader = req.headers.authorization;
 
+    // Check if the auth header is present and properly formatted
     if (!authHeader || !authHeader.startsWith('Basic ')) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
@@ -16,7 +23,6 @@ class AuthController {
       encodedCredentials,
       'base64',
     ).toString();
-
     const [email, password] = decodedCredentials.split(':');
 
     if (!email || !password) {
@@ -33,14 +39,22 @@ class AuthController {
     const key = `auth_${token}`;
     const expiresIn = 86400; // 24 hours in seconds
 
-    redisClient.set(key, user._id.toString(), expiresIn);
+    // Set the token in Redis with a 24-hour expiration
+    await redisClient.set(key, user._id.toString(), expiresIn);
 
     return res.status(200).json({ token });
   }
 
+  /**
+   *
+   * @param {request} req
+   * @param {response} res
+   * @returns
+   */
   static async getDisconnect(req, res) {
     const token = req.headers['x-token'];
 
+    // If no token is provided, consider it unauthorized
     if (!token) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
@@ -48,12 +62,14 @@ class AuthController {
     const key = `auth_${token}`;
     const userId = await redisClient.get(key);
 
+    // If token is invalid or expired, clear it and respond with Unauthorized
     if (!userId) {
+      await redisClient.del(key); // Ensure any lingering invalid token is cleared
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    redisClient.del(key);
-
+    // If token is valid, delete it and log out user
+    await redisClient.del(key);
     return res.status(204).send();
   }
 }
