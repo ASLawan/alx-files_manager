@@ -2,7 +2,9 @@ import redisClient from '../utils/redis';
 import dbClient from '../utils/db';
 
 class AppController {
-  // GET /status
+  /**
+   * get status
+   */
   static async getStatus(req, res) {
     const redisStatus = redisClient.isAlive();
     const dbStatus = dbClient.isAlive();
@@ -13,7 +15,9 @@ class AppController {
     });
   }
 
-  // GET /stats
+  /**
+   * get stats
+   */
   static async getStats(req, res) {
     try {
       const usersCount = await dbClient.nbUsers();
